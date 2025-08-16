@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>问答小游戏</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #4a5568;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        
+        .start-screen {
+            text-align: center;
+        }
+        
+        .quiz-screen {
+            display: none;
+        }
+        
+        .question {
+            font-size: 1.3em;
+            margin-bottom: 25px;
+            padding: 20px;
+            background: #f7fafc;
+            border-radius: 10px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .options {
+            display: grid;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .option {
+            padding: 15px 20px;
+            background: #edf2f7;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.1em;
+        }
+        
+        .option:hover {
+            background: #e2e8f0;
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+        
+        .option.selected {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        
+        .option.correct {
+            background: #48bb78;
+            color: white;
+            border-color: #48bb78;
+        }
+        
+        .option.incorrect {
+            background: #f56565;
+            color: white;
+            border-color: #f56565;
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 12px 25px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+        
+        .start-btn {
+            background: #667eea;
+            color: white;
+            font-size: 1.3em;
+            padding: 15px 40px;
+        }
+        
+        .start-btn:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+        }
+        
+        .answer-btn {
+            background: #48bb78;
+            color: white;
+        }
+        
+        .answer-btn:hover {
+            background: #38a169;
+        }
+        
+        .next-btn {
+            background: #ed8936;
+            color: white;
+        }
+        
+        .next-btn:hover {
+            background: #dd6b20;
+        }
+        
+        .answer-display {
+            margin: 20px 0;
+            padding: 15px;
+            background: #fef5e7;
+            border-radius: 8px;
+            border-left: 5px solid #ed8936;
+            display: none;
+        }
+        
+        .answer-display.show {
+            display: block;
+        }
+        
+        .stats {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+            color: #4a5568;
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .buttons {
+                flex-direction: column;
+            }
+            
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧠 问答小游戏</h1>
+        
+        <div id="startScreen" class="start-screen">
+            <h2>欢迎来到问答小游戏！</h2>
+            <p>这里有150道有趣的问题等着你来挑战</p>
+            <button class="start-btn" onclick="startQuiz()">开始答题</button>
+        </div>
+        
+        <div id="quizScreen" class="quiz-screen">
+            <div class="stats">
+                <span id="questionNumber">第 1 题</span>
+            </div>
+            
+            <div class="question" id="questionText">
+                问题将在这里显示
+            </div>
+            
+            <div class="options" id="optionsContainer">
+                <!-- 选项将在这里动态生成 -->
+            </div>
+            
+            <div class="answer-display" id="answerDisplay">
+                <strong>正确答案：</strong><span id="correctAnswer"></span>
+            </div>
+            
+            <div class="buttons">
+                <button class="answer-btn" onclick="showAnswer()">显示答案</button>
+                <button class="next-btn" onclick="nextQuestion()">下一题</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 题库数据
+        const quizData = [
+            {question: "世界上使用人数最多的语言是:", options: ["英语", "汉语", "西班牙语", "世界语"], answer: "B"},
+            {question: "世界上海拔最高的山峰是哪一座?", options: ["乔戈里峰", "珠穆朗玛峰", "干城章嘉峰", "公格尔山峰"], answer: "B"},
+            {question: "\"鲁\"是我国哪个省份的简称:", options: ["河北", "吉林", "山东", "山西"], answer: "C"},
+            {question: "《西游记》中的火焰山在哪里？", options: ["甘肃", "青海", "新疆", "西藏"], answer: "C"},
+            {question: "\"刘三姐\"是我国哪个少数民族民间传说中的人物？", options: ["壮族", "苗族", "维吾尔族", "蒙古族"], answer: "A"},
+            {question: "\"干冰\"的成分是：", options: ["O2", "H2O", "SO2", "CO2"], answer: "D"},
+            {question: "文艺复兴时期的《忏悔录》是谁写的？", options: ["卢梭", "契科夫", "高尔基", "列夫托尔斯泰"], answer: "A"},
+            {question: "中国古代名医华佗为谁所杀？", options: ["刘邦", "项羽", "孙权", "曹操"], answer: "D"},
+            {question: "被称为有野人出没的神农架在我国哪一省份？", options: ["河南", "湖北", "湖南", "甘肃"], answer: "B"},
+            {question: "UFO的具体涵义是：", options: ["不明固体", "神秘的物体", "未知的物体", "不明飞行物"], answer: "D"},
+            {question: "我国第一大岛是:", options: ["西沙群岛", "台湾岛", "澎湖列岛", "钓鱼岛"], answer: "B"},
+            {question: "哪个行星的表面与月球的表面是非常相似的？", options: ["木星", "水星", "土星", "火星"], answer: "B"},
+            {question: "\"白马非马\"出自谁口？", options: ["韩非", "庄子", "公孙龙", "宋玉"], answer: "C"},
+            {question: "大雁塔在哪里？", options: ["西宁", "黑龙江", "西安", "白银"], answer: "C"},
+            {question: "泼水节是我国哪一民族一年中最盛大的节日？", options: ["傣族", "苗族", "维吾尔族", "蒙古族"], answer: "A"},
+            {question: "被称为\"瓷都\"的是我国哪一城市？", options: ["贵阳", "重庆", "乌鲁木齐", "景德镇"], answer: "D"},
+            {question: "华夏民族是在哪儿诞生的？", options: ["黄河流域", "长江流域", "渭水", "珠江"], answer: "A"},
+            {question: "湖南湖北的\"湖\"是指？", options: ["鄱阳湖", "西湖", "太湖", "洞庭湖"], answer: "D"},
+            {question: "陕西乾陵武则天墓碑上有几个字？", options: ["三个字", "无一字", "五个字", "四个字"], answer: "B"},
+            {question: "中国古代提出\"人性本善\"的是：", options: ["孔子", "荀子", "老子", "孟子"], answer: "D"},
+            {question: "海底的珊瑚是：", options: ["植物", "矿物", "合成物", "动物"], answer: "D"},
+            {question: "有\"东方瑞士\"之称的城市是：", options: ["南宁", "大理", "昆明", "拉萨"], answer: "B"},
+            {question: "戚继光驱逐的是哪国侵略者？", options: ["高丽", "日本", "英国", "泰国"], answer: "B"},
+            {question: "科举制始于哪个朝代？", options: ["宋朝", "明朝", "隋唐", "清朝"], answer: "C"},
+            {question: "\"凤雏先生\"是谁？", options: ["诸葛亮", "司马徽", "庞统", "诸葛瑾"], answer: "C"},
+            {question: "《古兰经》是哪个教的圣书？", options: ["伊斯兰教", "佛教", "基督教", "道教"], answer: "A"},
+            {question: "在我国，自古就有\"天府之国\"美誉的地区是：", options: ["四川盆地", "吐鲁番盆地", "塔里木盆地", "准噶尔盆地"], answer: "A"},
+            {question: "古代的死刑在什么季节行刑？", options: ["夏季", "冬季", "春季", "秋后"], answer: "D"},
+            {question: "我国被称为\"不夜城\"的城市是哪一城市", options: ["呼和浩特", "漠河", "吉林", "辽宁"], answer: "B"},
+            {question: "数学符号中的\"0\"起源于：", options: ["古希腊", "阿拉伯", "古罗马", "古印度"], answer: "D"},
+            {question: "我国现存的最大的皇家园林是：", options: ["故宫", "承德避暑山庄", "华清池", "秦始皇陵"], answer: "B"},
+            {question: "中国历史上第一个王朝时代是", options: ["商", "夏", "周", "汉"], answer: "B"},
+            {question: "傅雷家书是给谁的？", options: ["女儿", "孙子", "儿子", "孙女"], answer: "C"},
+            {question: "孟子的四端不包括", options: ["仁", "义", "信", "智"], answer: "C"},
+            {question: "下列矿种中，我国短缺的有：", options: ["金刚石", "煤", "钨", "锡"], answer: "A"},
+            {question: "马可波罗来中国的时候，中国处于哪个朝代", options: ["隋朝", "唐朝", "清朝", "元朝"], answer: "D"},
+            {question: "古代著名的水利工程都江堰是谁设计的", options: ["李冰父子", "张骞", "孙思邈", "鲁班"], answer: "A"},
+            {question: "马拉松赛跑中的\"马拉松\"一词是指", options: ["人名", "民族", "宗教", "地名"], answer: "D"},
+            {question: "地球上出现的四季更替是由于", options: ["地球自转", "地球公转", "月球绕地球转", "地球绕太阳转"], answer: "B"},
+            {question: "世界上最大的坐佛位于", options: ["敦煌", "印度", "西藏", "四川"], answer: "D"},
+            {question: "中国在南极设立的第一个考察站叫什么名字", options: ["长兴站", "昆仑站", "中山站", "长城站"], answer: "D"},
+            {question: "称为\"数学之神\"的科学家是", options: ["希尔伯特", "阿基米德", "欧几里得", "笛卡尔"], answer: "B"},
+            {question: "法国的凯旋门是为纪念谁而建造的", options: ["苏尔特", "贝尔纳多特", "拿破仑", "戴高乐"], answer: "C"},
+            {question: "春城是指我国哪一城市", options: ["广西", "大理", "昆明", "南宁"], answer: "C"},
+            {question: "下列四城市中,太阳能最丰富的是", options: ["西宁", "包头", "西安", "拉萨"], answer: "D"},
+            {question: "山东山西的\"山\"是指", options: ["武夷山", "泰山", "黄山", "太行山"], answer: "D"},
+            {question: "世界上华人、华侨最集中的地区是", options: ["东南亚", "美国", "英国", "法国"], answer: "A"},
+            {question: "中国第一个共产主义小组的领导人是", options: ["毛泽东", "王明", "李大钊", "陈独秀"], answer: "D"},
+            {question: "太阳在那一天离地球最远", options: ["秋分", "夏至", "冬至", "春分"], answer: "B"},
+            {question: "人类最早使用的工具是什么材料的", options: ["铁", "木", "青铜", "石"], answer: "D"},
+            {question: "被誉为\"风车之国\"是哪个国家", options: ["澳大利亚", "荷兰", "瑞士", "芬兰"], answer: "B"},
+            {question: "被称为\"万物之园\"的是", options: ["颐和园", "圆明园", "熙春园", "畅春园"], answer: "B"},
+            {question: "\"书圣\"王羲之的代表作是", options: ["中兴碑", "玄秘塔碑", "兰亭序", "平复帖"], answer: "C"},
+            {question: "电脑的中央处理器英文简写是什么", options: ["CPU", "VISIT", "RAM", "WPS"], answer: "A"},
+            {question: "哪一季节最不宜发哮喘", options: ["夏", "冬", "秋", "春"], answer: "A"},
+            {question: "古玛雅人流传于世的水晶头骨共有", options: ["11个", "12个", "15个", "13个"], answer: "D"},
+            {question: "世界上人口第二的国家是哪个", options: ["印度", "中国", "美国", "俄罗斯"], answer: "A"},
+            {question: "发明了电话的科学家是", options: ["爱因斯坦", "牛顿", "爱迪生", "贝尔"], answer: "D"},
+            {question: "以下哪一位曾被称为\"药王\"", options: ["华佗", "孙思邈", "扁鹊", "李时珍"], answer: "B"},
+            {question: "陈胜的\"鸿鹄之志\"中的鸿鹄指的是", options: ["老鹰", "雕", "凤凰", "天鹅"], answer: "D"},
+            {question: "提出\"知识就是力量\"的是", options: ["陶行知", "蔡元培", "布鲁纳", "培根"], answer: "D"},
+            {question: "谁死后布了\"七十二疑冢\"", options: ["秦始皇", "曹操", "武则天", "成吉思汗"], answer: "B"},
+            {question: "被人们称作通天河的河流是", options: ["黄河", "沱沱河", "密西西比河", "尼罗河"], answer: "B"},
+            {question: "世界最深处位于", options: ["大西洋", "印度洋", "太平洋", "北冰洋"], answer: "C"},
+            {question: "下列海洋中哪一个是我国最大的", options: ["南海", "东海", "黄海", "渤海"], answer: "A"},
+            {question: "以下能从月球上看到的建筑物是", options: ["万里长城", "故宫", "天安门", "卢浮宫"], answer: "A"},
+            {question: "在九大行星中，被称为最小最冷的行星是哪一颗", options: ["冥王星", "天王星", "海王星", "水星"], answer: "A"},
+            {question: "哪个国家有\"千湖国\"的称号", options: ["瑞士", "波兰", "德国", "芬兰"], answer: "D"},
+            {question: "美国的国花是什么花", options: ["郁金香", "玫瑰", "天堂鸟", "樱花"], answer: "B"},
+            {question: "世界上火山最多的洲是", options: ["南美洲", "北美洲", "大洋洲", "亚洲"], answer: "D"},
+            {question: "工业革命的发祥地在", options: ["法国", "英国", "俄国", "美国"], answer: "B"},
+            {question: "最早的扇子是用什么做的", options: ["纸", "羽毛", "丝绸", "绢"], answer: "B"},
+            {question: "下列哪个地方的日照时间最长", options: ["毛乌素沙漠", "鄂尔多斯沙漠", "撒哈拉大沙漠", "塔克拉玛干沙漠"], answer: "C"},
+            {question: "被称为\"国际会议之都\"的城市是", options: ["渥太华", "维也纳", "日内瓦", "巴黎"], answer: "C"},
+            {question: "我国的恐龙博物馆在", options: ["四川自贡", "云南昆明", "广西桂林", "湖北神农架"], answer: "A"},
+            {question: "弱冠指的是", options: ["十五岁", "四十岁", "五十岁", "二十岁"], answer: "D"},
+            {question: "世界上最大的稀土矿在我国的", options: ["内蒙", "甘肃", "青海", "西藏"], answer: "A"},
+            {question: "扑克牌中的\"方块\"象征着什么", options: ["权力", "爱心", "智慧", "财富"], answer: "D"},
+            {question: "下列名称不属于二十四节气的是", options: ["惊蛰", "大伏", "小寒", "冬至"], answer: "B"},
+            {question: "太阳中心说（\"日心说\"）是谁提出的", options: ["伽利略", "达尔文", "牛顿", "哥白尼"], answer: "D"},
+            {question: "云冈石窟位于我国哪个省", options: ["陕西", "山东", "安徽", "山西"], answer: "D"},
+            {question: "我国最大的淡水湖是", options: ["西湖", "鄱阳湖", "太湖", "洞庭湖"], answer: "B"},
+            {question: "国色指的是", options: ["百合", "芙蓉", "牡丹", "月季"], answer: "C"},
+            {question: "抗金名将岳飞被害于", options: ["陶然亭", "爱晚亭", "风波亭", "醉翁亭"], answer: "C"},
+            {question: "\"卧龙先生\"是谁", options: ["诸葛亮", "司马徽", "庞统", "诸葛瑾"], answer: "A"},
+            {question: "中国名山崆峒山在哪里", options: ["敦煌", "张掖", "天水", "平凉"], answer: "D"},
+            {question: "\"回眸一笑百媚生\"是指哪个美女", options: ["杨贵妃", "西施", "貂蝉", "王昭君"], answer: "A"},
+            {question: "目前世界上原煤产量最多的国家是", options: ["美国", "伊拉克", "英国", "中国"], answer: "D"},
+            {question: "\"卧薪尝胆\"讲的是", options: ["范蠡", "勾践", "夫差", "伍子胥"], answer: "B"},
+            {question: "世界上最大的冰川在哪个洲", options: ["北美洲", "大洋洲", "北极洲", "南极洲"], answer: "D"},
+            {question: "世界教徒人数最多的宗教是", options: ["佛教", "基督教", "道教", "伊斯兰教"], answer: "B"},
+            {question: "\"飞鸟尽，良弓藏，狡兔死，走狗烹\"是谁最先说的", options: ["范蠡", "勾践", "夫差", "伍子胥"], answer: "A"},
+            {question: "\"五岳\"中的南岳是那座山", options: ["嵩山", "泰山", "衡山", "华山"], answer: "C"},
+            {question: "而立之年是？", options: ["四十", "五十", "三十", "七十"], answer: "C"},
+            {question: "有一种动物叫\"天子妃\"，它是", options: ["猫", "狗", "凤凰", "天鹅"], answer: "A"},
+            {question: "下列哪个是欧洲仅次于伦敦的第二大金融中心", options: ["莫斯科", "罗马", "马德里", "巴黎"], answer: "D"},
+            {question: "自然界已知的最硬物质是", options: ["金刚石", "花岗岩", "石墨", "铬"], answer: "A"},
+            {question: "芒种是在阳历的几月", options: ["二月", "五月", "九月", "六月"], answer: "D"},
+            {question: "人民币的发行机构是", options: ["中国农业银行", "中国人民银行", "中国工商银行", "中国建设银行"], answer: "B"},
+            {question: "古代被称为大食的国家是", options: ["缅甸", "日本", "朝鲜", "阿拉伯"], answer: "D"},
+            {question: "布达拉宫最初是为谁建造的", options: ["松赞干布", "王昭君", "高阳公主", "文成公主"], answer: "D"},
+            {question: "\"祸福相依\"，是哪一家的思想", options: ["儒家", "道家", "法家", "名家"], answer: "B"},
+            {question: "《四库全书》是什么时候纂修的", options: ["唐代", "清代", "宋代", "明代"], answer: "B"},
+            {question: "我国哪个民族喜爱饮用马奶酒", options: ["藏族", "彝族", "蒙古族", "朝鲜族"], answer: "C"},
+            {question: "我国最先出现的纸币是", options: ["金、元纸币", "明、清纸币", "北宋交子", "南宋会子"], answer: "C"},
+            {question: "素有\"煤铁之乡\"之称的省份是哪一省", options: ["山西", "山东", "陕西", "青海"], answer: "A"},
+            {question: "素有\"沙漠之舟\"之称的内蒙古双峰驼生长在", options: ["荒漠地区", "平原地区", "高原地区", "盆地"], answer: "A"},
+            {question: "英文china的意思是", options: ["宣纸", "丝绸", "棉花", "瓷器"], answer: "D"},
+            {question: "\"火把节\"是哪个民族的传统节日", options: ["藏族", "彝族", "蒙古族", "朝鲜族"], answer: "B"},
+            {question: "国鸟是公鸡的国家是", options: ["澳大利亚", "新西兰", "德国", "法国"], answer: "D"},
+            {question: "举世闻名的泰姬陵在", options: ["阿富汗", "印度", "泰国", "比利时"], answer: "B"},
+            {question: "儒林外史是哪个朝代的人写的", options: ["唐代", "清代", "宋代", "明代"], answer: "B"},
+            {question: "谁是\"中山装\"的创始人", options: ["黄兴", "宋庆龄", "孙中山", "孔祥熙"], answer: "C"},
+            {question: "沙漠之舟--骆驼的驼峰是用来", options: ["贮水的", "贮食物的", "贮脂肪的", "驮物品的"], answer: "C"},
+            {question: "经常食用以下哪种食物容易引起铅中毒", options: ["松花蛋", "油条", "豆腐", "粉条"], answer: "A"},
+            {question: "\"人生自古谁无死，留取丹心照汗青\"的作者是", options: ["李白", "王维", "岳飞", "文天祥"], answer: "D"},
+            {question: "\"变脸\"是哪个剧种的绝活", options: ["川剧", "京剧", "豫剧", "黄梅戏"], answer: "A"},
+            {question: "中国签订的第一个不平等条约是哪个", options: ["北京条约", "马关条约", "辛丑条约", "南京条约"], answer: "D"},
+            {question: "甲骨文是写在哪上面的", options: ["石头", "龟骨", "树木", "贝壳"], answer: "B"},
+            {question: "俗称\"四不象\"的动物是", options: ["骡子", "羊驼", "羚羊", "麋鹿"], answer: "D"},
+            {question: "《孙子兵法》的作者是", options: ["诸葛亮", "庞涓", "孙膑", "孙武"], answer: "D"},
+            {question: "\"喇叭\"是对什么乐器的俗称", options: ["长号", "唢呐", "短号", "笛子"], answer: "B"},
+            {question: "\"春风不度玉门关\"是谁的诗句", options: ["李白", "王昌龄", "王之涣", "白居易"], answer: "C"},
+            {question: "石头城是对我国哪座城市的美称?", options: ["广西", "南京", "昆明", "南宁"], answer: "B"},
+            {question: "\"山城\"是我国哪座城市的雅号", options: ["重庆", "包头", "西安", "拉萨"], answer: "A"},
+            {question: "下列哪一个城市不是我国的\"三大火炉\"(高温)之一", options: ["重庆", "武汉", "南京", "成都"], answer: "D"},
+            {question: "下列著名宫殿哪个位于英国", options: ["白金汉宫", "故宫", "凡尔赛宫", "克里姆林宫"], answer: "A"},
+            {question: "世界上现存最大的佛教艺术宝库是", options: ["云冈石窟", "龙门石窟", "大足石窟", "敦煌石窟"], answer: "D"},
+            {question: "我国第一座国家森林公园是", options: ["武夷山", "张家界", "长白山", "九寨沟"], answer: "B"},
+            {question: "下列名关哪一座被称为\"天下第一关\"", options: ["居庸关", "娘子关", "潼门关", "山海关"], answer: "D"},
+            {question: "下列我国军事家中哪位不是\"十大元帅\"之一", options: ["林彪", "毛泽东", "罗荣桓", "叶剑英"], answer: "B"},
+            {question: "\"隐形飞机\"是指什么样的飞机", options: ["肉眼看不见", "雷达测不到", "飞行太高看不见", "体积太小"], answer: "B"},
+            {question: "\"人不可有傲气,但不可无傲骨\"是谁的座右铭", options: ["李大钊", "孙中山", "徐悲鸿", "周恩来"], answer: "C"},
+            {question: "下列古都哪个被称为\"六朝古都\"", options: ["洛阳", "北京", "南京", "西安"], answer: "C"},
+            {question: "著名古迹\"秦始皇兵马俑\"位于我国哪个省份", options: ["陕西", "山西", "甘肃", "湖南"], answer: "A"},
+            {question: "被称为酿酒行业的祖师是谁", options: ["柳永", "鲁班", "孔子", "杜康"], answer: "D"},
+            {question: "\"文房四宝\"中的毛笔是谁发明的", options: ["蒙恬", "乐毅", "闻仲", "刘伯温"], answer: "A"},
+            {question: "宋氏三姐妹中哪位是孙中山先生的夫人", options: ["宋霭龄", "宋美龄", "宋子文", "宋庆龄"], answer: "D"},
+            {question: "标志着抗日战争爆发的芦沟桥事变是在哪一年", options: ["1936年", "1937年", "1938年", "1939年"], answer: "B"},
+            {question: "古代科举考试最后在殿试中考取第一名被称为是", options: ["执牛鼻", "榜眼", "探花", "状元"], answer: "D"},
+            {question: "著名高校剑桥大学是在哪个国家", options: ["中国", "美国", "法国", "英国"], answer: "D"},
+            {question: "著名书籍《物种起源》一书是谁所著", options: ["哥白尼", "达尔文", "牛顿", "马克思"], answer: "B"},
+            {question: "悲剧《窦娥冤》是谁所著", options: ["王实甫", "关汉卿", "马致远", "白朴"], answer: "B"},
+            {question: "我国要被选为国家主席、副主席年龄要在多少周岁以上", options: ["35", "40", "45", "50"], answer: "C"},
+            {question: "下列数字中哪一个是西方人最忌讳的", options: ["13", "4", "7", "8"], answer: "A"},
+            {question: "愚人节是在每一年的哪一天", options: ["4月1日", "4月3日", "4月4日", "4月5日"], answer: "A"},
+            {question: "\"念慈\"是古代对对方亲属中哪一位的尊称", options: ["母亲", "父亲", "伯父", "伯母"], answer: "A"},
+            {question: "下列哪个国家一般不准女性在生人面前露面", options: ["瑞士", "波兰", "德国", "沙特阿拉伯"], answer: "D"},
+            {question: "\"丘比特\"是西方传说中哪种神的别称", options: ["太阳神", "爱神", "战神", "智慧之神"], answer: "B"},
+            {question: "下列哪位僧人是小说\"西游记\"中唐僧的形象", options: ["鸠摩罗比", "不空", "鉴真", "玄奘"], answer: "D"}
+        ];
+
+        let currentQuestionIndex = 0;
+        let questionCount = 0;
+        let currentQuestion = null;
+        let usedQuestions = []; // Track used questions
+
+        // 开始答题
+        function startQuiz() {
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('quizScreen').style.display = 'block';
+            usedQuestions = []; // Reset used questions when starting new quiz
+            nextQuestion();
+        }
+
+        // 获取随机题目（确保不重复）
+        function getRandomQuestion() {
+            // If all questions have been used, reset the used questions array
+            if (usedQuestions.length >= quizData.length) {
+                usedQuestions = [];
+            }
+            
+            // Filter out already used questions
+            const availableQuestions = quizData.filter((_, index) => !usedQuestions.includes(index));
+            
+            // Select a random question from available ones
+            const randomIndex = Math.floor(Math.random() * availableQuestions.length);
+            const selectedQuestion = availableQuestions[randomIndex];
+            
+            // Find the original index in quizData and mark it as used
+            const originalIndex = quizData.indexOf(selectedQuestion);
+            usedQuestions.push(originalIndex);
+            
+            return selectedQuestion;
+        }
+
+        // 显示下一题
+        function nextQuestion() {
+            questionCount++;
+            currentQuestion = getRandomQuestion();
+            
+            // 更新题目编号
+            document.getElementById('questionNumber').textContent = `第 ${questionCount} 题`;
+            
+            // 显示问题
+            document.getElementById('questionText').textContent = currentQuestion.question;
+            
+            // 生成选项
+            const optionsContainer = document.getElementById('optionsContainer');
+            optionsContainer.innerHTML = '';
+            
+            const optionLabels = ['A', 'B', 'C', 'D'];
+            currentQuestion.options.forEach((option, index) => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'option';
+                optionDiv.textContent = `${optionLabels[index]}. ${option}`;
+                optionDiv.onclick = () => selectOption(index);
+                optionsContainer.appendChild(optionDiv);
+            });
+            
+            // 隐藏答案显示
+            document.getElementById('answerDisplay').classList.remove('show');
+            
+            // 清除选项的选中状态
+            const options = document.querySelectorAll('.option');
+            options.forEach(option => {
+                option.classList.remove('selected', 'correct', 'incorrect');
+            });
+        }
+
+        // 选择选项
+        function selectOption(optionIndex) {
+            const options = document.querySelectorAll('.option');
+            
+            // 清除之前的选中状态
+            options.forEach(option => {
+                option.classList.remove('selected');
+            });
+            
+            // 选中当前选项
+            options[optionIndex].classList.add('selected');
+        }
+
+        // 显示答案
+        function showAnswer() {
+            const answerDisplay = document.getElementById('answerDisplay');
+            const correctAnswerSpan = document.getElementById('correctAnswer');
+            
+            // 获取正确答案的选项文本
+            const correctIndex = currentQuestion.answer.charCodeAt(0) - 65; // A=0, B=1, C=2, D=3
+            const correctOptionText = currentQuestion.options[correctIndex];
+            
+            correctAnswerSpan.textContent = `${currentQuestion.answer}. ${correctOptionText}`;
+            
+            // 显示答案区域
+            answerDisplay.classList.add('show');
+            
+            // 标记正确和错误选项
+            const options = document.querySelectorAll('.option');
+            options.forEach((option, index) => {
+                if (index === correctIndex) {
+                    option.classList.add('correct');
+                } else if (option.classList.contains('selected')) {
+                    option.classList.add('incorrect');
+                }
+            });
+        }
+    </script>
+</body>
+</html> 
